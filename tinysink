@@ -1,0 +1,111 @@
+#!/bin/bash
+#Set Script Name variable
+SCRIPT=`basename ${BASH_SOURCE[0]}`
+
+#Initialize variables to default values.
+SERVER='genomicsresearch.org'
+RETRY=180
+WAIT_BETWEEN_SYNC=10
+
+#Set fonts for Help.
+NORM=`tput sgr0`
+BOLD=`tput bold`
+REV=`tput smso`
+
+# require user to press Ctrl-C twice to exit
+RESUME=3
+handle_close() {
+  echo "Press CTRL-C again to kill. Resuming in $RESUME seconds"
+  sleep $RESUME || exit 0 
+}
+trap handle_close SIGINT SIGTERM
+
+#Help function
+function HELP {
+  echo -e \\n"Help documentation for ${BOLD}${SCRIPT}.${NORM}"\\n
+  echo -e "${REV}Basic usage:${NORM} ${BOLD}$SCRIPT -s /path/to/reads/ -d /path/on/server/ -u joffrey ${NORM}"\\n
+  echo "Command line switches are optional. The following switches are recognized."
+  echo "${BOLD}-s${NORM}  --Directory to synchronise with server (SOURCE). ${BOLD}[REQUIRED]${NORM}."
+  echo "${BOLD}-d${NORM}  --Directory on the server where files will be synchronised to (DESTINATION). ${BOLD}[REQUIRED]${NORM}."
+  echo "${BOLD}-u${NORM}  --User name to log into the server with. ${BOLD}[REQUIRED]${NORM}."
+  echo "${BOLD}-n${NORM}  --Server name to transfer to. Default is ${BOLD}genomicsresearch.org${NORM}."
+  echo -e "${BOLD}-h${NORM}  --Displays this help message. No further functions are performed."\\n
+  echo -e "Example: ${BOLD}$SCRIPT -s /path/to/reads/ -d /path/on/server/ -u joffrey ${NORM}"\\n
+  exit 1
+}
+
+#Check the number of arguments. If none are passed, print help and exit.
+NUMARGS=$#
+if [ $NUMARGS -eq 0 ]; then
+  HELP
+fi
+
+### Start getopts code ###
+
+#Parse command line flags
+#If an option should be followed by an argument, it should be followed by a ":".
+#Notice there is no ":" after "h". The leading ":" suppresses error messages from
+#getopts. This is required to get my unrecognized option code to work.
+
+while getopts :s:d:u:n:h FLAG; do
+  case $FLAG in
+    s)  #set source
+      SOURCE=$OPTARG
+      ;;
+
+    d)  #set destination
+      DEST=$OPTARG
+      ;;
+
+    u)  #set user name
+      USERNAME=$OPTARG
+      ;;
+
+    n)  #set server name
+      SERVER=$OPTARG
+      ;;
+
+    h)  #show help
+      HELP
+      ;;
+
+    \?) #unrecognized option - show help
+      echo -e \\n"Option -${BOLD}$OPTARG${NORM} not allowed."
+      HELP
+      ;;
+
+    :) #flag used but no argument was passed to it
+      echo -e \\n"Option -$OPTARG requires an argument."
+      HELP
+      exit 2
+      ;;
+
+  esac
+done
+
+# Make sure a source, destination, and user name are all supplied
+if [ ! $SOURCE ] || [ ! $DEST ] || [ ! $USERNAME ]
+then
+    echo -e \\n"A source (-s), destination (-d), and user name (-u) ${BOLD}MUST${NORM} be supplied."
+    HELP
+    exit 2
+fi
+
+# shift $((OPTIND-1))  #This tells getopts to move on to the next argument.
+
+### End getopts code ###
+
+while true;
+do
+    rsync -zvr --partial --include='*.'{fast5,fastq} --include "*/" --exclude "*" $SOURCE/ ${USERNAME}@${SERVER}:${DEST}
+
+    # if exit status is not 0 i.e bad exit
+    if [ "$?" != "0" ] ; then
+        echo "Rsync failure. Backing off and retrying in $((RETRY + WAIT_BETWEEN_SYNC)) seconds..."
+        sleep $RETRY
+    fi
+
+    sleep $WAIT_BETWEEN_SYNC
+done
+
+exit 0
