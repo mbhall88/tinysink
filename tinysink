@@ -29,7 +29,7 @@ function HELP {
   echo "${BOLD}-u${NORM}  --User name to log into the server with. ${BOLD}[REQUIRED]${NORM}."
   echo "${BOLD}-n${NORM}  --Server name to transfer to. ${BOLD}[REQUIRED]${NORM}."
   echo -e "${BOLD}-h${NORM}  --Displays this help message. No further functions are performed."\\n
-  echo -e "Example: ${BOLD}$SCRIPT -s /path/to/reads/ -d /path/on/server/ -u joffrey ${NORM}"\\n
+  echo -e "Example: ${BOLD}$SCRIPT -s /path/to/reads/ -d /path/on/server/ -u username -n myserver.org${NORM}"\\n
   exit 1
 }
 
@@ -76,7 +76,6 @@ while getopts :s:d:u:n:h FLAG; do
     :) #flag used but no argument was passed to it
       echo -e \\n"Option -$OPTARG requires an argument."
       HELP
-      exit 2
       ;;
 
   esac
@@ -87,7 +86,6 @@ if [ ! $SOURCE ] || [ ! $DEST ] || [ ! $USERNAME ] || [ ! $SERVER ]
 then
     echo -e \\n"A source (-s), destination (-d), user name (-u), and server (-n) ${BOLD}MUST${NORM} be supplied."
     HELP
-    exit 2
 fi
 
 # shift $((OPTIND-1))  #This tells getopts to move on to the next argument.
