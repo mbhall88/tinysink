@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #Set Script Name variable
 SCRIPT=`basename ${BASH_SOURCE[0]}`
 
