@@ -1,4 +1,6 @@
 # tinysink
+
+[![Anaconda-Server Badge](https://anaconda.org/bioconda/tinysink/badges/installer/conda.svg)](https://conda.anaconda.org/bioconda)  
 Synchronise Nanopore reads with a server.
 
 This is a script for synchronising any `.fast5` or `.fastq` files being produced from a Nanopore experiment. Can be run during the sequencing, in which case it will sync new files as they are produced, or after the fact.
